@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LOCAL BOY PARTNER - Dashboard</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase Web SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #f1f5f9; color: #1e293b; padding-bottom: 90px; }
+        a { text-decoration: none; color: inherit; }
+        .clickable:active { transform: scale(0.97); opacity: 0.9; }
+
+        /* Top Header */
+        .top-header { background: #ffffff; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100;}
+        .store-info h2 { font-size: 18px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;}
+        .store-info h2 i { color: #ff5200; }
+        .store-info p { font-size: 11px; color: #64748b; font-weight: 500;}
+        
+        /* Toggle Switch */
+        .switch-container { display: flex; align-items: center; gap: 8px; }
+        .switch-label { font-size: 12px; font-weight: 700; color: #475569;}
+        .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e0; transition: .4s; border-radius: 26px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        input:checked + .slider { background-color: #10b981; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
+        .stat-card { background: #ffffff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 12px;}
+        .stat-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 18px; }
+        .stat-info h4 { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;}
+        .stat-info h3 { font-size: 18px; font-weight: 800; color: #0f172a;}
+
+        /* Tabs */
+        .tabs { display: flex; background: #ffffff; border-bottom: 1px solid #e2e8f0; }
+        .tab { flex: 1; text-align: center; padding: 15px 0; font-size: 13px; font-weight: 700; color: #64748b; border-bottom: 3px solid transparent; cursor: pointer; position: relative;}
+        .tab.active { color: #ff5200; border-bottom: 3px solid #ff5200; }
+        .badge { position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; font-size: 9px; padding: 2px 6px; border-radius: 10px; display: none;}
+
+        /* Orders Container */
+        .orders-section { padding: 15px; display: none; }
+        .orders-section.active { display: block; }
+        
+        .order-card { background: #ffffff; border-radius: 16px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #e2e8f0;}
+        .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed #e2e8f0;}
+        .order-id { font-size: 14px; font-weight: 800; color: #0f172a; }
+        .order-time { font-size: 11px; color: #64748b; font-weight: 500; margin-top: 2px;}
+        .order-amt { font-size: 15px; font-weight: 800; color: #10b981; }
+
+        .order-items { font-size: 13px; color: #475569; font-weight: 600; line-height: 1.6; margin-bottom: 15px;}
+        
+        .action-buttons { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; transition: 0.2s;}
+        .btn:active { transform: scale(0.97); }
+        .btn-reject { background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; }
+        .btn-accept { background: #ff5200; color: white; border: none; box-shadow: 0 4px 10px rgba(255, 82, 0, 0.2);}
+        .btn-ready { background: #10b981; color: white; border: none; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);}
+
+        /* Empty State */
+        .empty-state { text-align: center; padding: 40px 20px; color: #64748b; }
+        .empty-state i { font-size: 40px; color: #cbd5e0; margin-bottom: 15px;}
+        .empty-state h3 { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 5px;}
+        .empty-state p { font-size: 12px; }
+
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; justify-content: space-around; padding: 12px 10px; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); z-index: 101; border-top-left-radius: 24px; border-top-right-radius: 24px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #a0aec0; font-size: 11px; font-weight: 600; gap: 4px; padding: 5px; cursor: pointer;}
+        .nav-item.active { color: #ff5200; }
+        .nav-item i { font-size: 22px; transition: 0.2s;}
+    </style>
+</head>
+<body>
+
+    <div class="top-header">
+        <div class="store-info">
+            <h2><i class="fa-solid fa-store"></i> <span id="partnerStoreName">Loading...</span></h2>
+            <p>Partner Dashboard</p>
+        </div>
+        <div class="switch-container">
+            <span class="switch-label" id="storeStatusLabel">Closed</span>
+            <label class="switch">
+                <input type="checkbox" id="storeToggle" onchange="toggleStoreStatus()">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #fff8eb; color: #ff5200;"><i class="fa-solid fa-receipt"></i></div>
+            <div class="stat-info"><h4>Today's Orders</h4><h3 id="statOrders">0</h3></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #ecfdf5; color: #10b981;"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+            <div class="stat-info"><h4>Today's Sales</h4><h3 id="statRevenue">₹0</h3></div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('new')">New <span class="badge" id="badgeNew">0</span></div>
+        <div class="tab" onclick="switchTab('preparing')">Preparing <span class="badge" id="badgePrep">0</span></div>
+        <div class="tab" onclick="switchTab('completed')">Completed</div>
+    </div>
+
+    <!-- New Orders -->
+    <div class="orders-section active" id="sec-new">
+        <div id="list-new"></div>
+        <div class="empty-state" id="empty-new" style="display: none;">
+            <i class="fa-regular fa-clock"></i>
+            <h3>No New Orders</h3>
+            <p>Waiting for customers to place orders.</p>
+        </div>
+    </div>
+
+    <!-- Preparing Orders -->
+    <div class="orders-section" id="sec-preparing">
+        <div id="list-preparing"></div>
+        <div class="empty-state" id="empty-preparing" style="display: none;">
+            <i class="fa-solid fa-fire-burner"></i>
+            <h3>Nothing in Kitchen</h3>
+            <p>Accept new orders to start preparing.</p>
+        </div>
+    </div>
+
+    <!-- Completed Orders -->
+    <div class="orders-section" id="sec-completed">
+        <div id="list-completed"></div>
+        <div class="empty-state" id="empty-completed" style="display: none;">
+            <i class="fa-solid fa-check-double"></i>
+            <h3>No Completed Orders</h3>
+            <p>Delivered orders will appear here.</p>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="dashboard.html" class="nav-item active"><i class="fa-solid fa-clipboard-list"></i><span>Orders</span></a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-book-open"></i><span>Menu</span></a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-user-gear"></i><span>Profile</span></a>
+    </div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyC9PnjAdBeOEy0TLQvUBJUznlZFKSS82uI",
+            authDomain: "sri-vishnu-priya-finance-c591f.firebaseapp.com",
+            databaseURL: "https://sri-vishnu-priya-finance-c591f-default-rtdb.firebaseio.com",
+            projectId: "sri-vishnu-priya-finance-c591f",
+            storageBucket: "sri-vishnu-priya-finance-c591f.firebasestorage.app",
+            messagingSenderId: "184676228358",
+            appId: "1:184676228358:web:7ef47b55ab678bb0dfd287"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let partnerRestId = localStorage.getItem('partnerRestId') || '1'; 
+        let partnerName = localStorage.getItem('partnerName') || 'Partner Store';
+        
+        document.getElementById('partnerStoreName').innerText = partnerName;
+
+        // Static menu dictionary to show names instead of IDs
+        const menuDB = {
+            '1': 'Chicken Dum Biryani', '2': 'Paneer Butter Masala', '3': 'Chicken 65',
+            'g1': 'Onions', 'g2': 'Tomatoes', 'g3': 'Milk'
+        };
+
+        window.onload = function() {
+            auth.onAuthStateChanged((user) => {
+                if (!user) {
+                    window.location.href = "index.html"; // Redirect if not logged in
+                } else {
+                    listenToOrders();
+                }
+            });
+        };
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.orders-section').forEach(s => s.classList.remove('active'));
+            
+            event.currentTarget.classList.add('active');
+            document.getElementById(`sec-${tabName}`).classList.add('active');
+        }
+
+        function listenToOrders() {
+            db.ref('orders').orderByChild('restaurantId').equalTo(partnerRestId).on('value', (snapshot) => {
+                const listNew = document.getElementById('list-new');
+                const listPrep = document.getElementById('list-preparing');
+                const listComp = document.getElementById('list-completed');
+                
+                listNew.innerHTML = ''; listPrep.innerHTML = ''; listComp.innerHTML = '';
+                
+                let countNew = 0, countPrep = 0, todaySales = 0, todayOrders = 0;
+                
+                // Sort descending by time
+                let ordersArray = [];
+                snapshot.forEach(child => { ordersArray.push(child.val()); });
+                ordersArray.sort((a, b) => b.timestamp - a.timestamp);
+
+                const today = new Date().toDateString();
+
+                ordersArray.forEach(order => {
+                    // Check if order is from today for stats
+                    if(new Date(order.timestamp).toDateString() === today) {
+                        todayOrders++;
+                        if(order.status !== 'Cancelled') {
+                            todaySales += order.totalAmount;
+                        }
+                    }
+
+                    // Format Items
+                    let itemsHtml = '';
+                    for(let id in order.items) {
+                        let itemName = menuDB[id] || 'Item';
+                        itemsHtml += `${order.items[id]} x ${itemName}<br>`;
+                    }
+
+                    const timeStr = new Date(order.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+                    const cardHtml = `
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div>
+                                    <div class="order-id">#${order.orderId}</div>
+                                    <div class="order-time">${timeStr} • ${order.paymentMethod}</div>
+                                </div>
+                                <div class="order-amt">₹${order.totalAmount}</div>
+                            </div>
+                            <div class="order-items">${itemsHtml}</div>
+                            <div class="action-buttons" id="actions-${order.orderId}">
+                                <!-- Buttons injected dynamically -->
+                            </div>
+                        </div>
+                    `;
+
+                    if(order.status === 'Placed') {
+                        countNew++;
+                        listNew.innerHTML += cardHtml;
+                        document.getElementById(`actions-${order.orderId}`).innerHTML = `
+                            <button class="btn btn-reject clickable" onclick="updateOrderStatus('${order.orderId}', 'Cancelled')">Reject</button>
+                            <button class="btn btn-accept clickable" onclick="updateOrderStatus('${order.orderId}', 'Preparing')">Accept Order</button>
+                        `;
+                    } else if (order.status === 'Preparing') {
+                        countPrep++;
+                        listPrep.innerHTML += cardHtml;
+                        document.getElementById(`actions-${order.orderId}`).innerHTML = `
+                            <button class="btn btn-ready clickable" onclick="updateOrderStatus('${order.orderId}', 'On the Way')">Mark Ready / On the Way</button>
+                        `;
+                    } else if (order.status === 'On the Way' || order.status === 'Delivered' || order.status === 'Cancelled') {
+                        listComp.innerHTML += cardHtml;
+                        let statusColor = order.status === 'Cancelled' ? '#ef4444' : (order.status === 'Delivered' ? '#10b981' : '#f59e0b');
+                        document.getElementById(`actions-${order.orderId}`).innerHTML = `
+                            <div style="width: 100%; text-align: center; font-size: 13px; font-weight: 700; color: ${statusColor}; padding: 8px;">
+                                Status: ${order.status}
+                            </div>
+                        `;
+                        // Temporary logic for testing: If on the way, show button to deliver
+                        if (order.status === 'On the Way') {
+                             document.getElementById(`actions-${order.orderId}`).innerHTML += `
+                                <button class="btn btn-ready clickable" style="margin-top: 10px;" onclick="updateOrderStatus('${order.orderId}', 'Delivered')">Simulate Delivery</button>
+                            `;
+                        }
+                    }
+                });
+
+                // Update UI Badges & Empty States
+                updateBadge('badgeNew', countNew);
+                updateBadge('badgePrep', countPrep);
+                
+                document.getElementById('empty-new').style.display = countNew === 0 ? 'block' : 'none';
+                document.getElementById('empty-preparing').style.display = countPrep === 0 ? 'block' : 'none';
+                document.getElementById('empty-completed').style.display = listComp.innerHTML === '' ? 'block' : 'none';
+
+                document.getElementById('statOrders').innerText = todayOrders;
+                document.getElementById('statRevenue').innerText = `₹${todaySales}`;
+            });
+        }
+
+        function updateBadge(id, count) {
+            const badge = document.getElementById(id);
+            if(count > 0) { badge.style.display = 'inline-block'; badge.innerText = count; } 
+            else { badge.style.display = 'none'; }
+        }
+
+        function updateOrderStatus(orderId, newStatus) {
+            db.ref('orders/' + orderId).update({ status: newStatus })
+            .then(() => {
+                // Audio alert optional here
+                console.log(`Order ${orderId} updated to ${newStatus}`);
+            })
+            .catch(err => alert("Error updating order: " + err.message));
+        }
+
+        function toggleStoreStatus() {
+            const isChecked = document.getElementById('storeToggle').checked;
+            const label = document.getElementById('storeStatusLabel');
+            
+            if(isChecked) {
+                label.innerText = "Open";
+                label.style.color = "#10b981";
+                // In a real app, update db.ref('restaurant_profiles/' + partnerRestId).update({ isOpen: true })
+            } else {
+                label.innerText = "Closed";
+                label.style.color = "#ef4444";
+                // update { isOpen: false }
+            }
+        }
+    </script>
+</body>
+</html>

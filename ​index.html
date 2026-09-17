@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LOCAL BOY PARTNER - Login</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase Web SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: #1e293b; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        
+        .login-card { background: #ffffff; width: 100%; max-width: 400px; border-radius: 24px; padding: 40px 25px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2); text-align: center; }
+        
+        .brand-container { margin-bottom: 30px; }
+        .brand-logo { width: 60px; height: 60px; background: #ff5200; color: white; border-radius: 16px; display: inline-flex; justify-content: center; align-items: center; font-size: 28px; font-weight: 800; margin-bottom: 10px; box-shadow: 0 8px 20px rgba(255, 82, 0, 0.3);}
+        .brand-text { font-size: 24px; font-weight: 800; color: #0f172a; line-height: 1.2;}
+        .brand-text span { color: #ff5200; }
+        .app-badge { display: inline-block; background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 10px; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;}
+
+        .input-group { text-align: left; margin-bottom: 20px; position: relative;}
+        .input-group label { display: block; font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; text-transform: uppercase;}
+        
+        .input-wrapper { display: flex; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 5px 15px; transition: 0.3s; }
+        .input-wrapper:focus-within { border-color: #ff5200; background: #ffffff; box-shadow: 0 0 0 3px rgba(255, 82, 0, 0.1); }
+        .input-wrapper i { color: #a0aec0; font-size: 16px; margin-right: 12px; }
+        
+        /* Updated Input CSS */
+        .input-wrapper input { 
+            flex: 1; 
+            min-width: 0; 
+            width: 100%;
+            border: none; 
+            outline: none; 
+            background: transparent; 
+            padding: 12px 0; 
+            font-size: 14px; 
+            color: #1e293b; 
+            font-weight: 500;
+            text-overflow: ellipsis; 
+        }
+        
+        .toggle-pwd { color: #a0aec0; cursor: pointer; padding: 10px; margin-right: -10px;}
+
+        .btn-login { width: 100%; background: #ff5200; color: white; border: none; padding: 15px; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px rgba(255, 82, 0, 0.25); transition: 0.2s; margin-top: 10px;}
+        .btn-login:active { transform: scale(0.98); }
+        .btn-login:disabled { background: #cbd5e0; cursor: not-allowed; box-shadow: none; transform: none;}
+
+        .error-msg { color: #ef4444; font-size: 12px; font-weight: 500; margin-top: 15px; display: none; background: #fef2f2; padding: 10px; border-radius: 8px; border: 1px solid #fee2e2;}
+        
+        .admin-note { margin-top: 25px; font-size: 12px; color: #94a3b8; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px;}
+        .admin-note i { color: #cbd5e0; }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="brand-container">
+            <div class="brand-logo"><i class="fa-solid fa-store"></i></div>
+            <div class="brand-text">Local <span>Boy</span></div>
+            <div class="app-badge">Partner App</div>
+        </div>
+
+        <div class="input-group">
+            <label>Partner ID / Email</label>
+            <div class="input-wrapper">
+                <i class="fa-solid fa-envelope"></i>
+                <input type="email" id="partnerId" placeholder="e.g. bawarchi@localboy.com">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Password</label>
+            <div class="input-wrapper">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" id="password" placeholder="Enter your password">
+                <i class="fa-solid fa-eye-slash toggle-pwd" id="togglePwd" onclick="togglePassword()"></i>
+            </div>
+        </div>
+
+        <button class="btn-login" id="loginBtn" onclick="handleLogin()">Login to Dashboard</button>
+
+        <div class="error-msg" id="errorMsg">Invalid ID or Password.</div>
+
+        <div class="admin-note">
+            <i class="fa-solid fa-circle-info"></i> Use the credentials provided by Admin
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config - Use the same config as the customer app
+        const firebaseConfig = {
+            apiKey: "AIzaSyC9PnjAdBeOEy0TLQvUBJUznlZFKSS82uI",
+            authDomain: "sri-vishnu-priya-finance-c591f.firebaseapp.com",
+            databaseURL: "https://sri-vishnu-priya-finance-c591f-default-rtdb.firebaseio.com",
+            projectId: "sri-vishnu-priya-finance-c591f",
+            storageBucket: "sri-vishnu-priya-finance-c591f.firebasestorage.app",
+            messagingSenderId: "184676228358",
+            appId: "1:184676228358:web:7ef47b55ab678bb0dfd287"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // Check if already logged in
+        window.onload = function() {
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    window.location.href = "dashboard.html";
+                }
+            });
+        };
+
+        function togglePassword() {
+            const pwdInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('togglePwd');
+            if (pwdInput.type === "password") {
+                pwdInput.type = "text";
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            } else {
+                pwdInput.type = "password";
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.innerText = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => { errorDiv.style.display = 'none'; }, 4000);
+        }
+
+        function handleLogin() {
+            const email = document.getElementById('partnerId').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const btn = document.getElementById('loginBtn');
+
+            if (!email || !password) {
+                showError("Please enter both ID and Password.");
+                return;
+            }
+
+            btn.innerText = "Authenticating...";
+            btn.disabled = true;
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    
+                    // Fetch restaurant mapping (to know which restaurant this email belongs to)
+                    db.ref('restaurant_admins/' + user.uid).once('value').then((snapshot) => {
+                        if (snapshot.exists()) {
+                            const restData = snapshot.val();
+                            localStorage.setItem('partnerRestId', restData.restaurantId);
+                            localStorage.setItem('partnerName', restData.restaurantName);
+                            window.location.href = "dashboard.html";
+                        } else {
+                            // Default fallback if admin hasn't mapped UID yet
+                            localStorage.setItem('partnerRestId', '1'); // Defaulting to Bawarchi for demo
+                            localStorage.setItem('partnerName', 'Partner Restaurant');
+                            window.location.href = "dashboard.html";
+                        }
+                    });
+                })
+                .catch((error) => {
+                    btn.innerText = "Login to Dashboard";
+                    btn.disabled = false;
+                    showError("Invalid ID or Password. Please try again.");
+                });
+        }
+    </script>
+</body>
+</html>
